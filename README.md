@@ -11,9 +11,18 @@ It's the big brother of [Heltec-V3-MP3-BT](https://github.com/hardwaremack-prog/
 
 ![Web control panel](screenshots/Web-panel-screens-V4.png)
 
-<details><summary>OLED screens (rendered from the real U8g2 fonts)</summary>
+## OLED screens
 
-![OLED screens](screenshots/OLED-screens-V4.png)
+The player's 0.96" screen, rendered with the same U8g2 fonts the firmware uses:
+
+<table>
+<tr><td align="center"><img src="screenshots/oled/02_home.png" width="260" alt="Home menu"><br><sub>Home menu</sub></td><td align="center"><img src="screenshots/oled/03_now_playing_flac.png" width="260" alt="Now Playing (FLAC + VU)"><br><sub>Now Playing (FLAC + VU)</sub></td><td align="center"><img src="screenshots/oled/06_now_playing_radio.png" width="260" alt="Internet radio, live title"><br><sub>Internet radio, live title</sub></td></tr>
+<tr><td align="center"><img src="screenshots/oled/04_radio_list.png" width="260" alt="Radio stations"><br><sub>Radio stations</sub></td><td align="center"><img src="screenshots/oled/09_settings_eq.png" width="260" alt="EQ + sleep timer"><br><sub>EQ + sleep timer</sub></td><td align="center"><img src="screenshots/oled/11_bluetooth.png" width="260" alt="Bluetooth scan"><br><sub>Bluetooth scan</sub></td></tr>
+</table>
+
+<details><summary>All screens</summary>
+
+![All OLED screens](screenshots/OLED-screens-V4.png)
 
 </details>
 
