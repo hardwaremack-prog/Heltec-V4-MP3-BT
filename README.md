@@ -1,5 +1,11 @@
 # Heltec V4 MP3 + BT
 
+<p align="center">
+  <a href="https://hardwaremack-prog.github.io/Heltec-V4-MP3-BT/"><img alt="Flash it in your browser" src="https://img.shields.io/badge/%E2%9A%A1%20Flash%20it%20in%20your%20browser-V3%20%26%20V4-3aa0ff?style=for-the-badge"></a>
+</p>
+
+**One-click install:** open **[hardwaremack-prog.github.io/Heltec-V4-MP3-BT](https://hardwaremack-prog.github.io/Heltec-V4-MP3-BT/)** in Chrome or Edge, plug in your Heltec **V3 or V4**, and click *Connect & Flash*. It detects which board you have and installs the right firmware.
+
 The **expanded** pocket music player for the **Heltec WiFi LoRa 32 V4** (ESP32-S3R2, 2 MB PSRAM, 16 MB flash).
 It's the big brother of [Heltec-V3-MP3-BT](https://github.com/hardwaremack-prog/Heltec-V3-MP3-BT) and uses the V4's extra memory and flash.
 
@@ -30,7 +36,7 @@ Everything from the V3 version is still here: OLED menus, PRG-only or 4-button c
 
 ## Flashing
 
-1. Open **`flasher/index.html`** in Chrome or Edge on a computer.
+1. Easiest: use the **[web flasher](https://hardwaremack-prog.github.io/Heltec-V4-MP3-BT/)**. Or open **`flasher/index.html`** in Chrome or Edge on a computer (it works offline).
 2. Plug in the V4 and click **Connect & Flash**. Pick the **USB JTAG/serial debug unit** port; the V4 uses the chip's own USB.
 3. If no port shows up: hold **PRG**, tap **RST**, release PRG, and try again. If the port disappears after flashing, unplug and replug the board.
 
@@ -135,6 +141,10 @@ python3 flasher/build_flasher.py <merged.bin> 2.0.0 <esptool-js bundle.js>
 ```
 
 `tools/oled_sim_v4.c` renders the OLED screens on a PC (see the V3 repo for the command).
+
+## Web flasher (GitHub Pages)
+
+`docs/` is the online flasher served at the link above. It holds both firmwares (`docs/firmware/`), so the same page flashes a V3 or a V4. When you build a new firmware, copy the trimmed merged `.bin` into `docs/firmware/` and update the version in `docs/index.html`.
 
 ## Credits
 
