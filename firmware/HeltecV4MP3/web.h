@@ -12,6 +12,7 @@ bool     apActive = false, staTrying = false, mdnsUp = false, serverUp = false;
 uint32_t staStart = 0;
 File     upFile; String upErr; String upPath;
 bool     otaRunning = false; int otaPct = -1;
+volatile bool webHit = false;     // a phone/PC has opened the page
 bool     libChanged = false;
 uint32_t rebootAt = 0;
 
@@ -151,11 +152,12 @@ bool safePath(const String &p) { return p.startsWith("/") && p.indexOf("..") < 0
 
 void setupRoutes() {
   server.on("/", HTTP_GET, []() {
+    webHit = true;
     server.sendHeader("Cache-Control", "no-cache");
     server.send_P(200, "text/html", WEB_UI);
   });
 
-  server.on("/api/status", HTTP_GET, []() { sendJson(statusJson()); });
+  server.on("/api/status", HTTP_GET, []() { webHit = true; sendJson(statusJson()); });
 
   server.on("/api/cmd", HTTP_POST, []() {
     String a = server.arg("a");
@@ -374,6 +376,7 @@ void setupRoutes() {
 
   server.onNotFound([]() {
     // captive-portal style: send phones that join the hotspot to the player page
+    webHit = true;
     if (apActive) { server.sendHeader("Location", "http://" + WiFi.softAPIP().toString() + "/"); server.send(302, "text/plain", ""); }
     else server.send(404, "text/plain", "Not found");
   });

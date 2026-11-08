@@ -36,8 +36,9 @@
 #include "AudioGeneratorFLAC.h"
 #include "AudioGeneratorWAV.h"
 #include "AudioOutputI2S.h"
+#include "qrcode.h"          // esp_qrcode (built into the ESP32 core)
 
-#define FW_VERSION "2.0.2"
+#define FW_VERSION "2.0.3"
 #define BOARD_NAME "Heltec V4"
 
 // ---------------- Pins (Heltec WiFi LoRa 32 V4, ESP32-S3R2) ----------------
@@ -199,7 +200,7 @@ const uint16_t screenTimes[] = { 0, 30, 60, 300 };
 const char *screenNames[]    = { "Always on", "30 sec", "1 min", "5 min" };
 const uint8_t brightVals[]   = { 10, 90, 255 };
 const char *brightNames[]    = { "Low", "Medium", "High" };
-bool resumeOn = true, visOn = true;
+bool resumeOn = true, visOn = true, connectAtStart = true;
 int  eqBass = 0, eqTreble = 0;               // -6..+6 dB
 const int sleepMins[] = { 0, 15, 30, 45, 60, 90 };
 int  sleepIdx = 0; uint32_t sleepEndMs = 0; float fadeGain = 1.0f;
@@ -228,7 +229,7 @@ int radioRetries = 0; uint32_t radioRetryAt = 0;
 int battMv = 0, battPct = -1; uint32_t battNext = 0;
 
 // ---------------- UI state ----------------
-enum Screen { SCR_HOME, SCR_BROWSE, SCR_NOW, SCR_CONTROLS, SCR_SETTINGS, SCR_NOSD, SCR_INFO, SCR_BT, SCR_WIFI, SCR_RADIO };
+enum Screen { SCR_HOME, SCR_BROWSE, SCR_NOW, SCR_CONTROLS, SCR_SETTINGS, SCR_NOSD, SCR_INFO, SCR_BT, SCR_WIFI, SCR_RADIO, SCR_CONNECT };
 Screen screen = SCR_HOME;
 int  menuSel = 0, menuTop = 0;
 uint32_t lastInputMs = 0;
@@ -311,6 +312,7 @@ void saveSettings() {
   prefs.putInt("vol", volume); prefs.putInt("mode", playMode); prefs.putInt("scr", screenIdx);
   prefs.putInt("bri", brightIdx); prefs.putBool("res", resumeOn); prefs.putBool("vis", visOn);
   prefs.putInt("bass", eqBass); prefs.putInt("treb", eqTreble);
+  prefs.putBool("conn", connectAtStart);
 }
 void loadSettings() {
   volume = constrain(prefs.getInt("vol", 12), 0, 20);
@@ -319,6 +321,7 @@ void loadSettings() {
   brightIdx = constrain(prefs.getInt("bri", 2), 0, 2);
   resumeOn = prefs.getBool("res", true); visOn = prefs.getBool("vis", true);
   eqBass = constrain(prefs.getInt("bass", 0), -6, 6); eqTreble = constrain(prefs.getInt("treb", 0), -6, 6);
+  connectAtStart = prefs.getBool("conn", true);
 }
 
 #include "bt.h"
@@ -710,7 +713,7 @@ String ctrlLabel(int i, bool &d) {
   return "";
 }
 
-const int setCount = 12;
+const int setCount = 13;
 String sgn(int v) { return v > 0 ? "+" + String(v) : String(v); }
 String setLabel(int i, bool &d) {
   d = false;
@@ -725,8 +728,9 @@ String setLabel(int i, bool &d) {
     case 7: return String("Screen off: ") + screenNames[screenIdx];
     case 8: return String("Brightness: ") + brightNames[brightIdx];
     case 9: return String("Resume: ") + (resumeOn ? "On" : "Off");
-    case 10: return "Re-scan SD card";
-    case 11: return "Back";
+    case 10: return String("Start: ") + (connectAtStart ? "Wi-Fi QR" : "Home");
+    case 11: return "Re-scan SD card";
+    case 12: return "Back";
   }
   return "";
 }
@@ -823,6 +827,57 @@ void drawNoSD() {
   oled.setFont(u8g2_font_6x10_tf); oled.drawStr(0, 60, "OK: retry  BACK: home");
 }
 
+// ---- Connect screen: QR code + Wi-Fi details, shown at start until a phone/PC opens the page ----
+bool connectFromMenu = false;
+uint8_t qrBits[33 * 33]; int qrSize = 0; String qrText;
+void qrStore(esp_qrcode_handle_t q) {
+  int n = esp_qrcode_get_size(q); if (n > 33) { qrSize = 0; return; }
+  qrSize = n;
+  for (int y = 0; y < n; y++) for (int x = 0; x < n; x++) qrBits[y * n + x] = esp_qrcode_get_module(q, x, y);
+}
+void makeQR(const String &t) {
+  if (t == qrText) return;
+  qrText = t; qrSize = 0;
+  esp_qrcode_config_t cfg = { qrStore, 4, ESP_QRCODE_ECC_LOW };
+  esp_qrcode_generate(&cfg, t.c_str());
+}
+void drawQR(int x0, int y0) {
+  int sc = qrSize * 2 <= 60 ? 2 : 1;
+  int box = qrSize * sc + 4;
+  oled.drawBox(x0, y0, box, box);                 // light background (quiet zone)
+  oled.setDrawColor(0);
+  for (int y = 0; y < qrSize; y++) for (int x = 0; x < qrSize; x++)
+    if (qrBits[y * qrSize + x]) oled.drawBox(x0 + 2 + x * sc, y0 + 2 + y * sc, sc, sc);
+  oled.setDrawColor(1);
+}
+void drawConnect() {
+  bool sta = WiFi.status() == WL_CONNECTED;
+  oled.setFont(u8g2_font_5x7_tf);
+  // text column starts right of the QR code; every line is kept to what fits (5 px per character)
+  auto lines = [](int x, std::initializer_list<String> ls) { int y = 8; for (auto &l : ls) { oled.drawStr(x, y, l.c_str()); y += 8; } };
+  auto qrW = []() { return qrSize ? qrSize * (qrSize * 2 <= 60 ? 2 : 1) + 4 : 0; };
+  String skip = connectFromMenu ? "PRG: back" : "PRG: skip";
+  if (sta) {
+    String ip = WiFi.localIP().toString();
+    makeQR("http://" + ip + "/");
+    if (qrSize) drawQR(0, 1);
+    lines(qrW() + 5, { "Scan or open:", ip, "heltec-mp3", "  .local", "", "", skip });
+  } else if (apActive) {
+    makeQR("WIFI:T:WPA;S:" + apName + ";P:heltecmp3;;");
+    if (qrSize) drawQR(0, 1);
+    String a = apName.substring(0, 11), b = apName.length() > 11 ? apName.substring(11) : String("");
+    lines(qrW() + 4, { "Join Wi-Fi:", a, b, "pw heltecmp3", "then open", "192.168.4.1", skip });
+  } else {
+    oled.setFont(u8g2_font_7x13B_tf); oled.drawStr(4, 20, "Joining Wi-Fi");
+    oled.setFont(u8g2_font_6x10_tf);
+    String n = wifiSsid.length() > 20 ? wifiSsid.substring(0, 20) : wifiSsid;
+    oled.drawStr(4, 36, n.c_str());
+    int dots = (millis() / 400) % 4; String d = ""; for (int i = 0; i < dots; i++) d += ". ";
+    oled.drawStr(4, 48, d.c_str());
+    oled.setFont(u8g2_font_5x7_tf); oled.drawStr(4, 62, skip.c_str());
+  }
+}
+
 void render() {
   if (displayAsleep || otaRunning) return;
   oled.clearBuffer();
@@ -840,6 +895,7 @@ void render() {
     case SCR_BT:       drawHeader("Bluetooth"); drawList(btItemCount(), menuSel, menuTop, btLabel); break;
     case SCR_WIFI:     drawHeader("Wi-Fi"); drawList(wifiCount, menuSel, menuTop, wifiLabel); break;
     case SCR_RADIO:    drawHeader("Radio"); drawList(stCount, menuSel, menuTop, radioLabel); break;
+    case SCR_CONNECT:  drawConnect(); break;
   }
   // PRG hold meter + "let go" hint
   uint32_t h = prgHeldMs();
@@ -1023,9 +1079,10 @@ void handle(InputEvent e) {
           case 7: screenIdx = (screenIdx + 1) % 4; saveSettings(); break;
           case 8: brightIdx = (brightIdx + 1) % 3; oled.setContrast(brightVals[brightIdx]); saveSettings(); break;
           case 9: resumeOn = !resumeOn; saveSettings(); break;
-          case 10: stopTrack(); sdOk = mountSD(); entryCount = 0; curDir = "/"; idxReady = false; plCount = 0;
+          case 10: connectAtStart = !connectAtStart; saveSettings(); break;
+          case 11: stopTrack(); sdOk = mountSD(); entryCount = 0; curDir = "/"; idxReady = false; plCount = 0;
                    toast(sdOk ? "SD card OK" : "No SD card"); break;
-          case 11: goScreen(SCR_HOME); menuSel = H_SET; break;
+          case 12: goScreen(SCR_HOME); menuSel = H_SET; break;
         }
       }
       break;
@@ -1039,6 +1096,10 @@ void handle(InputEvent e) {
       break;
 
     case SCR_INFO: if (ev != EV_NONE) { goScreen(SCR_HOME); menuSel = H_ABOUT; } break;
+
+    case SCR_CONNECT:
+      if (ev != EV_NONE) { if (connectFromMenu) { goScreen(SCR_WIFI); menuSel = 1; } else goScreen(SCR_HOME); connectFromMenu = false; }
+      break;
 
     case SCR_BT: {
       int cnt = btItemCount();
@@ -1068,6 +1129,7 @@ void handle(InputEvent e) {
       else if (ev == EV_BACK) { goScreen(SCR_HOME); menuSel = H_WIFI; }
       else if (ev == EV_OK) {
         if (menuSel == 0) { wifiOn = !wifiOn; prefs.putBool("wifi", wifiOn); wifiStart(); toast(wifiOn ? "Wi-Fi on" : "Wi-Fi off"); }
+        else if ((menuSel == 1 || menuSel == 2 || menuSel == 3) && wifiOn) { connectFromMenu = true; screen = SCR_CONNECT; }
         else if (menuSel == 4) {
           wifiSsid = ""; wifiPass = ""; prefs.putString("wssid", ""); prefs.putString("wpass", "");
           if (wifiOn) { WiFi.disconnect(); wifiStart(); }
@@ -1110,12 +1172,14 @@ void setup() {
   pinMode(PIN_PRG, INPUT_PULLUP);
   pinMode(PIN_BTN_UP, INPUT_PULLUP); pinMode(PIN_BTN_DOWN, INPUT_PULLUP);
   pinMode(PIN_BTN_OK, INPUT_PULLUP); pinMode(PIN_BTN_BACK, INPUT_PULLUP);
-  delay(50);
+  delay(200);   // cold power-up: give the OLED (powered through Vext) time to come up
 
   prefs.begin("heltecmp3", false);
   loadSettings();
 
   oled.begin();
+  delay(60);
+  oled.begin();            // second init: some OLEDs ignore the first one right after power-up
   oled.setBusClock(800000);
   oled.setContrast(brightVals[brightIdx]);
   drawProgressScreen("Heltec V4 MP3", "v" FW_VERSION "  starting...");
@@ -1140,15 +1204,21 @@ void setup() {
   applyVolume();
   xTaskCreatePinnedToCore(audioTask, "audio", 12288, nullptr, 3, nullptr, 1);
 
+  drawProgressScreen("Heltec V4 MP3", "SD card...");
+  for (int i = 0; i < 3 && !sdOk; i++) { if (i) delay(300); sdOk = mountSD(); }   // cold cards can be slow to wake
+  if (sdOk) loadDir("/");
+
+  drawProgressScreen("Heltec V4 MP3", "Bluetooth module...");
   btBegin();
+
+  drawProgressScreen("Heltec V4 MP3", "Wi-Fi...");
   wifiOn = prefs.getBool("wifi", true);
   wifiSsid = prefs.getString("wssid", "");
   wifiPass = prefs.getString("wpass", "");
   wifiStart();
 
-  sdOk = mountSD();
-  if (sdOk) loadDir("/");
-  screen = SCR_HOME;
+  screen = (wifiOn && connectAtStart) ? SCR_CONNECT : SCR_HOME;
+  webHit = false;
   lastInputMs = millis();
   Serial.printf("Heltec V4 MP3 %s  PSRAM:%u  SD:%s  BT module:%s\n", FW_VERSION, (unsigned)ESP.getPsramSize(), sdOk ? "ok" : "missing", btUart ? "ok" : "not found");
 }
@@ -1165,6 +1235,14 @@ void loop() {
 
   btPoll();
   wifiTick();
+  if (screen == SCR_CONNECT && webHit && !connectFromMenu) {
+    webHit = false; goScreen(SCR_HOME); toast("Connected!", 1500);
+  }
+  static uint32_t nextSdTry = 10000;
+  if (!sdOk && millis() > nextSdTry) {        // card inserted later, or slow to start: keep trying
+    nextSdTry = millis() + 10000;
+    if ((sdOk = mountSD())) { loadDir("/"); toast("SD card found", 1500); if (screen == SCR_NOSD) goScreen(SCR_HOME); }
+  }
   if (libChanged) { libChanged = false; idxReady = false; if (sdOk) { int s = listSel; loadDir(curDir); listSel = min(s, max(0, browseCount() - 1)); } }
   if (trackEnded) { trackEnded = false; nextTrack(false); }
 
@@ -1195,7 +1273,7 @@ void loop() {
   if (millis() > battNext) { battNext = millis() + 10000; readBattery(); }
 
   uint16_t to = screenTimes[screenIdx];
-  if (to && !displayAsleep && millis() - lastInputMs > to * 1000UL) { displayAsleep = true; oled.setPowerSave(1); }
+  if (to && !displayAsleep && screen != SCR_CONNECT && millis() - lastInputMs > to * 1000UL) { displayAsleep = true; oled.setPowerSave(1); }
   if (!displayAsleep && millis() - lastDraw > 50) { lastDraw = millis(); render(); }
   delay(2);
 }

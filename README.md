@@ -52,10 +52,10 @@ Everything from the V3 version is still here: OLED menus, PRG-only or 4-button c
 You can also flash with esptool:
 
 ```
-esptool.py --chip esp32s3 write_flash 0x0 releases/heltec-v4-mp3-v2.0.2.bin
+esptool.py --chip esp32s3 write_flash 0x0 releases/heltec-v4-mp3-v2.0.3.bin
 ```
 
-For wireless updates (System tab), use `releases/heltec-v4-mp3-app-v2.0.2.bin`.
+For wireless updates (System tab), use `releases/heltec-v4-mp3-app-v2.0.3.bin`.
 
 > Built for the standard **V4 (ESP32-S3R2)**. The V4-R8 variant moves Vext, LED and ADC_Ctrl to other pins.
 
@@ -138,6 +138,10 @@ While you hold PRG, a bar fills along the bottom of the screen. After 0.6 s a **
 
 ## Wi-Fi
 
+**At start-up the player shows a Connect screen.** Scan the QR code with your phone camera and it joins the hotspot by itself (or opens the page, if the player is already on your home Wi-Fi). The screen also shows the network name, password and IP. It moves on as soon as your phone opens the page, or press PRG to skip.
+
+![Connect screen](screenshots/Connect-screen.png)
+
 - **First boot:** the player makes a hotspot named **Heltec-MP3-XXXX**, password `heltecmp3`. Join it and go to `192.168.4.1`.
 - **Home network:** add it in the Wi-Fi tab. After that, use `http://heltec-mp3.local` or the IP shown on the OLED.
 
@@ -158,7 +162,7 @@ arduino-cli compile -b "esp32:esp32:heltec_wifi_lora_32_V4:PSRAM=enabled,FlashSi
 Rebuild the flasher with:
 
 ```
-python3 flasher/build_flasher.py <merged.bin> 2.0.2 <esptool-js bundle.js>
+python3 flasher/build_flasher.py <merged.bin> 2.0.3 <esptool-js bundle.js>
 ```
 
 `tools/oled_sim_v4.c` renders the OLED screens on a PC (see the V3 repo for the command).
@@ -169,6 +173,7 @@ python3 flasher/build_flasher.py <merged.bin> 2.0.2 <esptool-js bundle.js>
 
 ## Changelog
 
+- **v2.0.3:** New **Wi-Fi Connect screen** at start-up. It shows a QR code (scan with your phone camera to join the hotspot, or to open the page when the player is on your home Wi-Fi), plus the network name, password and IP. It moves on to the Home menu as soon as a phone or PC opens the page, or press PRG to skip. Turn it off in Settings → "Start: Home", and bring it back any time from Home → Wi-Fi (select the IP line). **More reliable cold start:** the screen gets proper power-up time and a second init, so it no longer needs RST after plugging in. The SD card gets 3 tries at start and then keeps retrying every 10 s, and the Bluetooth module check is faster.
 - **v2.0.2:** PRG press-and-hold fixed. Both long presses now act when you **let go**, and the screen shows a "Let go: OK" or "Let go: Back" hint so you know when. Before, "Back" fired by itself at 1.5 s while you were still holding, so holding to select often went back instead.
 - **v2.0.1:** microSD pins changed to the **inline** layout (CS 42, MOSI 41, CLK 40, MISO 39) so the module plugs straight into the J3 header. If your board is wired the v2.0.0 way (CS 39, MISO 42), swap those two wires.
 - **v2.0.0:** first V4 release.

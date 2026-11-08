@@ -138,7 +138,7 @@ void btBegin() {
   pinMode(PIN_BT_STATUS, INPUT_PULLDOWN);
   btLastLow = millis();
   btUart = false;
-  const uint32_t bauds[] = { 115200, 9600, 57600, 38400, 19200 };
+  const uint32_t bauds[] = { 115200, 9600 };   // V1.7 default / older modules (faster start-up)
   for (uint32_t b : bauds) if (btProbe(b)) { btUart = true; btBaud = b; break; }
   if (!btUart) { BTSerial.end(); btLogAdd("No reply from KCX module on GPIO " + String(PIN_BT_RX) + "/" + String(PIN_BT_TX)); return; }
   btLogAdd("KCX module found at " + String(btBaud) + " baud");
