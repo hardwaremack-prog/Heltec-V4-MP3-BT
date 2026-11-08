@@ -37,7 +37,7 @@
 #include "AudioGeneratorWAV.h"
 #include "AudioOutputI2S.h"
 
-#define FW_VERSION "2.0.1"
+#define FW_VERSION "2.0.2"
 #define BOARD_NAME "Heltec V4"
 
 // ---------------- Pins (Heltec WiFi LoRa 32 V4, ESP32-S3R2) ----------------
@@ -258,26 +258,28 @@ Ev pollBtn(Btn &b, Ev shortEv, Ev longEv) {
 
 struct { bool down = false; uint32_t t0 = 0, lastChange = 0, releaseAt = 0; int clicks = 0; bool longSent = false, xlongSent = false; } prg;
 enum PrgEv { P_NONE, P_CLICK, P_DOUBLE, P_LONG, P_XLONG };
+// PRG gestures. Long presses act when you LET GO, and the screen says what letting go will do:
+//   tap = down, double-tap = up, hold 0.6-1.5 s then let go = OK, hold 1.5 s+ then let go = Back.
+// (Before v2.0.2 "Back" fired by itself at 1.5 s while still held, so holding to select often went Back.)
 PrgEv pollPrg() {
   bool pressed = digitalRead(PIN_PRG) == LOW;
   uint32_t now = millis();
   if (pressed != prg.down && now - prg.lastChange > 25) {
     prg.lastChange = now; prg.down = pressed;
-    if (pressed) { prg.t0 = now; prg.longSent = prg.xlongSent = false; }
+    if (pressed) { prg.t0 = now; }
     else {
       uint32_t held = now - prg.t0;
-      if (prg.xlongSent) { prg.clicks = 0; return P_NONE; }
-      if (held >= 600)   { prg.clicks = 0; return P_LONG; }
+      if (held >= 1500) { prg.clicks = 0; return P_XLONG; }
+      if (held >= 600)  { prg.clicks = 0; return P_LONG; }
       prg.clicks++; prg.releaseAt = now;
       if (prg.clicks >= 2) { prg.clicks = 0; return P_DOUBLE; }
     }
     return P_NONE;
   }
-  if (prg.down && !prg.xlongSent && now - prg.t0 > 1500) { prg.xlongSent = true; prg.clicks = 0; return P_XLONG; }
   if (!prg.down && prg.clicks == 1 && now - prg.releaseAt > 280) { prg.clicks = 0; return P_CLICK; }
   return P_NONE;
 }
-uint32_t prgHeldMs() { return (prg.down && !prg.xlongSent) ? millis() - prg.t0 : 0; }
+uint32_t prgHeldMs() { return prg.down ? millis() - prg.t0 : 0; }
 
 uint32_t elapsedMs();
 
@@ -839,11 +841,20 @@ void render() {
     case SCR_WIFI:     drawHeader("Wi-Fi"); drawList(wifiCount, menuSel, menuTop, wifiLabel); break;
     case SCR_RADIO:    drawHeader("Radio"); drawList(stCount, menuSel, menuTop, radioLabel); break;
   }
+  // PRG hold meter + "let go" hint
   uint32_t h = prgHeldMs();
-  if (h > 150) {
+  if (h > 150 && !displayAsleep) {
     int w = min(128, (int)(h * 128 / 1500));
     oled.setDrawColor(0); oled.drawBox(0, 61, 128, 3); oled.setDrawColor(1);
     oled.drawBox(0, 62, w, 2); oled.drawPixel(51, 61);
+    if (h >= 600) {
+      const char *hint = h >= 1500 ? "Let go: Back" : "Let go: OK";
+      oled.setFont(u8g2_font_6x10_tf);
+      int tw = oled.getStrWidth(hint) + 10, tx = (128 - tw) / 2;
+      oled.setDrawColor(0); oled.drawBox(tx - 3, 43, tw + 6, 18); oled.setDrawColor(1);
+      oled.drawRBox(tx, 46, tw, 13, 3);
+      oled.setDrawColor(0); oled.drawStr(tx + 5, 56, hint); oled.setDrawColor(1);
+    }
   }
   if (millis() < toastUntil) {
     oled.setFont(u8g2_font_6x10_tf);

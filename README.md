@@ -52,10 +52,10 @@ Everything from the V3 version is still here: OLED menus, PRG-only or 4-button c
 You can also flash with esptool:
 
 ```
-esptool.py --chip esp32s3 write_flash 0x0 releases/heltec-v4-mp3-v2.0.1.bin
+esptool.py --chip esp32s3 write_flash 0x0 releases/heltec-v4-mp3-v2.0.2.bin
 ```
 
-For wireless updates (System tab), use `releases/heltec-v4-mp3-app-v2.0.1.bin`.
+For wireless updates (System tab), use `releases/heltec-v4-mp3-app-v2.0.2.bin`.
 
 > Built for the standard **V4 (ESP32-S3R2)**. The V4-R8 variant moves Vext, LED and ADC_Ctrl to other pins.
 
@@ -114,7 +114,11 @@ Use a 4-channel BSS138 level shifter (LV = 3V3, HV = 5V). The `5V` pin only has 
 | Tap | Down | Next track / station |
 | Double-tap | Up | Play / Pause |
 | Hold ~1 s, release | Select | Controls (volume, mode, **sleep**, stop) |
-| Hold 1.5 s+ | Back | Home |
+| Hold 1.5 s+, then let go | Back | Home |
+
+While you hold PRG, a bar fills along the bottom of the screen. After 0.6 s a **"Let go: OK"** hint appears, and after 1.5 s it changes to **"Let go: Back"**.
+
+![PRG hold hint](screenshots/PRG-hold-hint.png)
 
 | Add-on button | Menus | Now Playing |
 |---|---|---|
@@ -154,7 +158,7 @@ arduino-cli compile -b "esp32:esp32:heltec_wifi_lora_32_V4:PSRAM=enabled,FlashSi
 Rebuild the flasher with:
 
 ```
-python3 flasher/build_flasher.py <merged.bin> 2.0.1 <esptool-js bundle.js>
+python3 flasher/build_flasher.py <merged.bin> 2.0.2 <esptool-js bundle.js>
 ```
 
 `tools/oled_sim_v4.c` renders the OLED screens on a PC (see the V3 repo for the command).
@@ -165,6 +169,7 @@ python3 flasher/build_flasher.py <merged.bin> 2.0.1 <esptool-js bundle.js>
 
 ## Changelog
 
+- **v2.0.2:** PRG press-and-hold fixed. Both long presses now act when you **let go**, and the screen shows a "Let go: OK" or "Let go: Back" hint so you know when. Before, "Back" fired by itself at 1.5 s while you were still holding, so holding to select often went back instead.
 - **v2.0.1:** microSD pins changed to the **inline** layout (CS 42, MOSI 41, CLK 40, MISO 39) so the module plugs straight into the J3 header. If your board is wired the v2.0.0 way (CS 39, MISO 42), swap those two wires.
 - **v2.0.0:** first V4 release.
 
