@@ -106,6 +106,7 @@
 
   <div class="card">
     <h2>Wiring for <span id="wname">V3</span></h2>
+    <img id="sdImg" alt="microSD card wiring" style="width:100%;max-width:900px;border-radius:10px;border:1px solid var(--line);margin-bottom:14px">
     <div id="wiring"></div>
     <p class="muted" style="margin-bottom:0">Full guide with photos of every screen: <a id="repoLink" href="#">README</a></p>
   </div>
@@ -135,6 +136,7 @@ function select(b, detected) {
   $('wname').textContent = B.name;
   $('wiring').innerHTML = '<table>' + B.rows.map(r => '<tr><th style="width:160px">' + r[0] + '</th><td>' + r[1] + '</td></tr>').join('') + '</table>';
   $('repoLink').href = B.repo + '#readme';
+  $('sdImg').src = 'img/sd-wiring-' + (b === 'v4' ? 'V4' : 'V3') + '.png';
 }
 $('v3ver').textContent = 'v' + BOARDS.v3.version; $('v4ver').textContent = 'v' + BOARDS.v4.version;
 document.querySelectorAll('.board').forEach(el => el.onclick = () => select(el.dataset.b));

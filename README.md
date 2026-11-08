@@ -69,6 +69,10 @@ The V4 uses some GPIOs that were free on the V3:
 
 Leave those alone. The SD card shares GPIO 39–42 with the GNSS connector, so **don't plug in the GNSS kit**.
 
+### microSD card
+
+![microSD wiring for the Heltec V4](screenshots/wiring/sd-wiring-V4.png)
+
 | microSD (3.3 V SPI) | V4 |
 |---|---|
 | VCC / GND | 3V3 / GND |
