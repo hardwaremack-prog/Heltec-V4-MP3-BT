@@ -76,7 +76,7 @@ Leave those alone. The SD card shares GPIO 39–42 with the GNSS connector, so *
 | microSD (3.3 V SPI) | V4 |
 |---|---|
 | VCC / GND | 3V3 / GND |
-| SCK | GPIO 40 |
+| CLK (SCK) | GPIO 40 |
 | MOSI | GPIO 41 |
 | MISO | GPIO 42 |
 | CS | GPIO 39 |

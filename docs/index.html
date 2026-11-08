@@ -117,10 +117,10 @@ import { ESPLoader, Transport } from './esptool-bundle.js';
 
 const BOARDS = {
   v3: { name: 'Heltec V3', version: '1.1.0', bin: 'firmware/heltec-v3-mp3-bt-v1.1.0.bin', repo: 'https://github.com/hardwaremack-prog/Heltec-V3-MP3-BT',
-        rows: [['microSD','SCK 40 · MOSI 41 · MISO 42 · CS 39 · 3V3 · GND'],['PCM5102A DAC','BCK 48 · LCK 47 · DIN 33 · SCK→GND · VIN 3V3'],
+        rows: [['microSD','CLK 40 · MOSI 41 · MISO 42 · CS 39 · 3v3→3V3 · GND'],['PCM5102A DAC','BCK 48 · LCK 47 · DIN 33 · SCK→GND · VIN 3V3'],
                ['Buttons (to GND)','UP 4 · DOWN 5 · OK 6 · BACK 7'],['KCX_BT_EMITTER','+5V→5V · RX←GPIO 2 · TX→GPIO 3 · LINK→GPIO 38 (via 3.3↔5 V level shifter) · AUDIO L/R/AGND→DAC']] },
   v4: { name: 'Heltec V4', version: '2.0.0', bin: 'firmware/heltec-v4-mp3-bt-v2.0.0.bin', repo: 'https://github.com/hardwaremack-prog/Heltec-V4-MP3-BT',
-        rows: [['microSD','SCK 40 · MOSI 41 · MISO 42 · CS 39 · 3V3 · GND (don\'t plug in the GNSS kit)'],['PCM5102A DAC','BCK 48 · LCK 47 · DIN 33 · SCK→GND · VIN 3V3'],
+        rows: [['microSD','CLK 40 · MOSI 41 · MISO 42 · CS 39 · 3v3→3V3 · GND (don\'t plug in the GNSS kit)'],['PCM5102A DAC','BCK 48 · LCK 47 · DIN 33 · SCK→GND · VIN 3V3'],
                ['Buttons (to GND)','UP 4 · DOWN 6 · OK 3 · BACK 34'],['KCX_BT_EMITTER','+5V→5V · RX←GPIO 43 (TX pin) · TX→GPIO 44 (RX pin) · LINK→GPIO 38 (via level shifter) · AUDIO L/R/AGND→DAC'],
                ['Battery','1-cell LiPo in the battery plug. The gauge needs no wiring.']] },
 };

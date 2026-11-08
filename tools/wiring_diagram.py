@@ -9,7 +9,7 @@ def svg(board):
     topy=by+28; boty=by+bh-28
     # SD module
     sx,sy,sw,sh=360,60,480,170
-    sd=[('GND','GND','#9aa4ae',0),('VCC','3V3','#ff5a5a',1),('MISO','42','#ffa53a',6),('MOSI','41','#4cd964',7),('SCK','40','#3aa0ff',8),('CS','39','#c77dff',9)]
+    sd=[('3v3','3V3','#ff5a5a',1),('CS','39','#c77dff',9),('MOSI','41','#4cd964',7),('CLK','40','#3aa0ff',8),('MISO','42','#ffa53a',6),('GND','GND','#9aa4ae',0)]
     sdx=lambda k: sx+70+k*68
     o=[]
     o.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif">')
@@ -21,11 +21,11 @@ def svg(board):
     o.append(f'<rect x="{sx+120}" y="{sy+70}" width="240" height="110" rx="8" fill="#c9ced6" stroke="#8e96a2" stroke-width="3"/>')
     o.append(f'<rect x="{sx+150}" y="{sy+90}" width="180" height="70" rx="4" fill="#2a2f36"/>')
     o.append(f'<text x="{sx+240}" y="{sy+132}" fill="#e6edf5" font-size="18" font-weight="700" text-anchor="middle">microSD</text>')
-    o.append(f'<text x="{sx+16}" y="{sy+66}" fill="#a9c7ee" font-size="14">3.3 V SPI module</text>')
+    o.append(f'<text x="{sx+16}" y="{sy+66}" fill="#a9c7ee" font-size="14">3.3 V SPI module (pin order as printed on it)</text>')
     # SD pins along bottom edge of module
     for k,(lab,_,col,_) in enumerate(sd):
         x=sdx(k); y=sy+sh+40
-        o.append(f'<rect x="{x-9}" y="{y-6}" width="18" height="30" rx="3" fill="#d4af37" stroke="#8a6d1d"/>')
+        o.append(f'<rect x="{x-9}" y="{y-6}" width="18" height="30" rx="{0 if k==0 else 3}" fill="#d4af37" stroke="{"#fff" if k==0 else "#8a6d1d"}" stroke-width="{2 if k==0 else 1}"/>')
         o.append(f'<text x="{x}" y="{y-14}" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">{lab}</text>')
     # board
     o.append(f'<rect x="{bx}" y="{by}" width="{bw}" height="{bh}" rx="18" fill="#141a22" stroke="#3a4a5c" stroke-width="3"/>')
@@ -62,7 +62,7 @@ def svg(board):
         x+=30+len(t)*8.8+26
     note='Pin names are printed next to each header pin on the board. Match by name. SD modules order their pins differently, so go by the labels.'
     if board=='V4': note+=' On the V4, GPIO 39–42 are shared with the GNSS connector, so leave the GNSS kit unplugged.'
-    lines=['Pin names are printed next to each header pin on the board. Match by name, not position.','SD modules order their pins differently, so go by the labels on yours.']
+    lines=['Module pins in silkscreen order: 3v3 · CS · MOSI · CLK · MISO · GND (square pad = 3v3). CLK is the SPI clock (SCK).','Header pin names are printed on the Heltec board. Match by name, not position.']
     if board=='V4': lines.append('On the V4, GPIO 39–42 are shared with the GNSS connector, so leave the GNSS kit unplugged.')
     for n,l in enumerate(lines): o.append(f'<text x="40" y="{ly+28+n*20}" fill="#7f93a8" font-size="14">{l}</text>')
     o.append('</svg>')
