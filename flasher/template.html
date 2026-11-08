@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heltec V4 MP3 — Flasher</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121922; --line:#223041; --ink:#d7e3ee; --dim:#7f93a8;
+    --oled:#7fe3ff; --ok:#6be38a; --warn:#ffcc66; --bad:#ff6b6b; --accent:#3aa0ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#16304a 0,transparent 60%),var(--bg);color:var(--ink);
+       font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
+  header{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
+  h1{margin:0;font-size:30px;letter-spacing:.5px}
+  h1 span{color:var(--oled)}
+  .sub{color:var(--dim);margin-top:2px}
+  h2{font-size:18px;margin:0 0 12px;color:#fff}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .full{grid-column:1/-1}
+  button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px 20px;cursor:pointer;background:var(--accent);color:#fff}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+  label.chk{display:flex;gap:8px;align-items:center;color:var(--dim);margin:12px 0}
+  .bar{height:12px;background:#0a0f15;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:14px 0 6px}
+  .bar>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--oled));transition:width .15s}
+  #status{font-weight:600}
+  #log{background:#070a0e;border:1px solid var(--line);border-radius:10px;padding:10px;height:170px;overflow:auto;
+       font:12px/1.45 ui-monospace,Consolas,monospace;color:#9fb3c6;white-space:pre-wrap;margin-top:10px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600}
+  td code,p code,li code{background:#0a1018;border:1px solid var(--line);border-radius:5px;padding:0 5px;color:var(--oled)}
+  .pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
+  .note{border-left:3px solid var(--warn);padding:8px 12px;background:#1a1710;border-radius:6px;color:#e9dcc0;font-size:14px}
+  .oled{background:#000;border-radius:8px;padding:10px;border:6px solid #1b2430;box-shadow:0 0 0 1px #2c3a4a,0 10px 30px #0008;display:inline-block}
+  canvas{image-rendering:pixelated;display:block}
+  ul{padding-left:20px;margin:6px 0} li{margin:3px 0}
+  .muted{color:var(--dim);font-size:13px}
+  .kbd{display:inline-block;min-width:22px;text-align:center;border:1px solid #3a4b5e;border-bottom-width:3px;border-radius:6px;padding:0 6px;font-size:13px;background:#0e151d}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="oled"><canvas id="preview" width="128" height="64" style="width:256px;height:128px"></canvas></div>
+    <div>
+      <h1>Heltec <span>V4 MP3</span></h1>
+      <div class="sub">Expanded music player for the Heltec WiFi LoRa 32 <b>V4</b> · MP3 / AAC / FLAC / WAV · internet radio · EQ · sleep timer · battery gauge · Bluetooth headset · Wi-Fi control panel</div>
+      <div style="margin-top:8px"><span class="pill">firmware v__VERSION__</span> <span class="pill">ESP32-S3R2 · 2 MB PSRAM · 16 MB flash</span> <span class="pill">__SIZE__ KB</span> <span class="pill">works offline</span></div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h2>1 · Flash the board</h2>
+      <ol style="margin:0 0 6px;padding-left:20px">
+        <li>Plug the Heltec <b>V4</b> into this computer with a USB-C <i>data</i> cable.</li>
+        <li>Click <b>Connect &amp; Flash</b> and pick the <b>USB JTAG/serial debug unit</b> port (the V4 uses the chip's own USB).</li>
+        <li>Wait for 100 %. The board reboots into the player.</li>
+      </ol>
+      <label class="chk"><input type="checkbox" id="erase" checked> Erase the whole flash first (recommended if it had Meshtastic or another firmware)</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button id="go">Connect &amp; Flash</button>
+        <button id="dl" class="ghost">Download .bin</button>
+      </div>
+      <div class="bar"><div id="prog"></div></div>
+      <div id="status">Ready.</div>
+      <div id="log"></div>
+      <p class="muted" id="support"></p>
+      <p class="muted">Won't connect, or no port shows up? Hold <span class="kbd">PRG</span>, tap <span class="kbd">RST</span>, let go of PRG, then try again. If the port disappears after flashing, unplug and replug the board. Close Arduino IDE and serial monitors first. Only for the standard V4 (ESP32-S3R2). The V4-R8 variant has a different pin map.</p>
+    </div>
+
+    <div class="card">
+      <h2>2 · Controls</h2>
+      <p style="margin-top:0"><b>Just the PRG button</b> <span class="muted">(no extra parts)</span></p>
+      <table>
+        <tr><th>Press</th><th>Menus &amp; files</th><th>Now Playing</th></tr>
+        <tr><td>Tap</td><td>Move down</td><td>Next track</td></tr>
+        <tr><td>Double-tap</td><td>Move up</td><td>Play / Pause</td></tr>
+        <tr><td>Hold ~1 s, release</td><td>Select / open</td><td>Controls menu (volume, mode…)</td></tr>
+        <tr><td>Hold 1.5 s+</td><td>Back</td><td>Home</td></tr>
+      </table>
+      <p class="muted">A thin bar along the bottom of the screen fills while you hold PRG so you can feel the timing.</p>
+      <p style="margin-bottom:4px"><b>With 4 add-on buttons</b> <span class="muted">(each button: GPIO → button → GND)</span></p>
+      <table>
+        <tr><th>Button</th><th>Menus &amp; files</th><th>Now Playing</th></tr>
+        <tr><td><span class="kbd">UP</span> GPIO4</td><td>Up (hold = fast scroll)</td><td>Volume + · hold = Next</td></tr>
+        <tr><td><span class="kbd">DOWN</span> GPIO6</td><td>Down (hold = fast scroll)</td><td>Volume − · hold = Previous</td></tr>
+        <tr><td><span class="kbd">OK</span> GPIO3</td><td>Select / open</td><td>Play / Pause · hold = Controls</td></tr>
+        <tr><td><span class="kbd">BACK</span> GPIO34</td><td>Parent folder / Home</td><td>Back to the file list</td></tr>
+      </table>
+      <p class="muted">The screen turns off after the timeout you set (Settings). The first press only wakes it. The V4 uses different button pins from the V3, because GPIO 5 and 7 drive the V4's LoRa amplifier.</p>
+    </div>
+
+    <div class="card full">
+      <h2>3 · Wiring</h2>
+      <div class="note" style="margin-bottom:14px"><b>V4 pin notes:</b> GPIO 2, 5, 7 and 46 run the V4's LoRa power amplifier, 19/20 are USB and 26 is PSRAM, so leave those alone. The SD card shares GPIO 39–42 with the GNSS connector, so <b>don't plug in the GNSS kit</b>. The battery gauge uses the V4's built-in sensing (GPIO 1 + 37) and needs no wiring.</div>
+      <div class="grid">
+        <div>
+          <p style="margin-top:0"><b>microSD module</b> <span class="muted">(your 6-pin 3.3 V SPI board)</span></p>
+          <table>
+            <tr><th>SD module</th><th>Heltec V4</th></tr>
+            <tr><td>3V3 / VCC</td><td><code>3V3</code></td></tr>
+            <tr><td>GND</td><td><code>GND</code></td></tr>
+            <tr><td>SCK / CLK</td><td><code>GPIO 40</code></td></tr>
+            <tr><td>MOSI / DI</td><td><code>GPIO 41</code></td></tr>
+            <tr><td>MISO / DO</td><td><code>GPIO 42</code></td></tr>
+            <tr><td>CS</td><td><code>GPIO 39</code></td></tr>
+          </table>
+        </div>
+        <div>
+          <p style="margin-top:0"><b>PCM5102A I2S DAC</b> <span class="muted">(purple GY-PCM5102 board, has a 3.5 mm jack)</span></p>
+          <table>
+            <tr><th>DAC</th><th>Heltec V4</th></tr>
+            <tr><td>VIN</td><td><code>3V3</code></td></tr>
+            <tr><td>GND</td><td><code>GND</code></td></tr>
+            <tr><td>BCK</td><td><code>GPIO 48</code></td></tr>
+            <tr><td>LCK (LRCK)</td><td><code>GPIO 47</code></td></tr>
+            <tr><td>DIN</td><td><code>GPIO 33</code></td></tr>
+            <tr><td>SCK</td><td><code>GND</code> (DAC makes its own clock)</td></tr>
+          </table>
+          <p class="muted">On the back of the board, FLT, DEMP and FMT go low and XSMT goes high. Most boards come with these bridged already. If you get silence, check the H1L–H4L solder pads.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full">
+      <h2>4 · Bluetooth headset</h2>
+      <div class="note">The Heltec V4's ESP32-S3 chip only has <b>Bluetooth Low Energy</b>. Headsets stream music over <b>Classic Bluetooth (A2DP)</b>, which the S3 doesn't have, so the board can't pair with a headset by itself. A <b>KCX_BT_EMITTER</b> transmitter module (a few dollars, V1.7 recommended) does the headset part. The player controls it over two serial wires, so you can scan, connect and forget headsets from the OLED or the web page.</div>
+      <div class="grid" style="margin-top:14px">
+        <div>
+          <table>
+            <tr><th>KCX_BT_EMITTER</th><th>Connect to</th></tr>
+            <tr><td>+5V</td><td>Heltec <code>5V</code> pin</td></tr>
+            <tr><td>PGND</td><td><code>GND</code></td></tr>
+            <tr><td>AUDIO_L</td><td>DAC <code>LOUT</code> (or jack tip)</td></tr>
+            <tr><td>AUDIO_R</td><td>DAC <code>ROUT</code> (or jack ring)</td></tr>
+            <tr><td>AGND</td><td>DAC <code>AGND</code> only (keep it off digital GND)</td></tr>
+            <tr><td>RX</td><td>level shifter ← <code>GPIO 43</code> (TX pin)</td></tr>
+            <tr><td>TX</td><td>level shifter → <code>GPIO 44</code> (RX pin)</td></tr>
+            <tr><td>LINK</td><td>level shifter → <code>GPIO 38</code></td></tr>
+          </table>
+          <p class="muted">Level shifter: a 4-channel BSS138 board. <b>LV</b> = 3V3, <b>HV</b> = 5V, GND to GND. On the V4 the header's TX/RX pins (43/44) are free because USB goes straight to the chip. The KCX expects 5 V serial signals, and some people report problems running it straight from 3.3 V pins.</p>
+        </div>
+        <div>
+          <ul style="margin-top:0">
+            <li><b>OLED:</b> Home → <b>Bluetooth</b> → <i>Scan for headsets</i>. Headsets show up as they're found. Select one to connect. <code>*</code> means it's remembered.</li>
+            <li><b>Web page:</b> the <b>Bluetooth</b> tab has scan, Connect buttons, the remembered list, "Forget all" and a raw command console.</li>
+            <li>Put the headset in <b>pairing mode</b> before you scan.</li>
+            <li>It remembers up to 10 headsets and auto-connects to the first one it sees. With none saved, it connects to any headset in pairing mode.</li>
+            <li>The <code>5V</code> pin only has power on USB. For battery or solar use, add a small 5 V boost board for the module.</li>
+            <li>Wired headphones in the DAC's jack still work, but Bluetooth audio lags slightly behind them.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full">
+      <h2>5 · Wi-Fi control panel</h2>
+      <div class="grid">
+        <div>
+          <ol style="margin-top:0;padding-left:20px">
+            <li>First boot: the player makes its own hotspot <b>Heltec-MP3-XXXX</b>, password <b>heltecmp3</b>.</li>
+            <li>Join it with your phone. The control page pops up, or go to <b>192.168.4.1</b>.</li>
+            <li><b>Wi-Fi</b> tab → Scan → pick your home network → enter the password → <i>Save &amp; restart</i>.</li>
+            <li>After that, open the IP shown on the OLED (Home → <b>Wi-Fi</b>) or <b>http://heltec-mp3.local</b> from any device on your network.</li>
+          </ol>
+          <p class="muted">If home Wi-Fi is down, it opens the hotspot again after 15 s and keeps retrying. You can turn Wi-Fi off in Home → Wi-Fi to save battery.</p>
+        </div>
+        <div>
+          <ul style="margin-top:0">
+            <li><b>Player</b>: play / pause / skip, volume, play mode, shuffle all, <b>EQ</b>, <b>sleep timer</b>.</li>
+            <li><b>Library</b>: <b>search the whole card</b>, browse, tap to play, <b>upload music</b>, new folder, delete.</li>
+            <li><b>Radio</b>: play, add, reorder and delete stations.</li>
+            <li><b>Bluetooth</b>: scan, connect, remember and forget headsets.</li>
+            <li><b>Wi-Fi</b>: join or forget networks.</li>
+            <li><b>System</b>: PSRAM, battery and SD space, restart, and <b>wireless firmware updates</b> (use the <code>heltec-v4-mp3-app</code> .bin).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full">
+      <h2>V4 extras</h2>
+      <div class="grid">
+        <ul style="margin-top:0">
+          <li><b>More formats:</b> MP3, AAC (.aac), FLAC and WAV, with 64 KB read-ahead buffers in PSRAM.</li>
+          <li><b>Internet radio:</b> Home → <i>Internet radio</i>, or the web page's <b>Radio</b> tab. Live song titles, 128 KB buffer, automatic reconnect. You can add your own http:// streams.</li>
+          <li><b>Big libraries:</b> 2000 items per folder, <i>Shuffle all music</i> across up to 5000 songs, and whole-card search on the web page.</li>
+        </ul>
+        <ul style="margin-top:0">
+          <li><b>EQ:</b> bass and treble ±6 dB, from Settings or the web sliders, with presets.</li>
+          <li><b>Sleep timer:</b> 15–90 min, fades out over the last 15 s.</li>
+          <li><b>VU meter</b> on Now Playing and a <b>battery gauge</b> in the header and on the web page.</li>
+          <li><b>Lower power:</b> the LoRa amplifier stays switched off.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>6 · SD card</h2>
+      <ul style="margin-top:0">
+        <li>Format as <b>FAT32</b> (cards up to 32 GB are easiest).</li>
+        <li>Copy <code>.mp3</code>, <code>.aac</code>, <code>.flac</code> or <code>.wav</code> files in, or upload them over Wi-Fi from the Library tab. Folders are fine (Artist / Album).</li>
+        <li>Up to 2000 items per folder. Folders show first, A→Z.</li>
+        <li>The title and artist come from the MP3's ID3 tags, or the file name if it has none.</li>
+        <li>No card at boot? The player shows the wiring pins. Fix it and press OK (or hold PRG) to retry.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>7 · Menus</h2>
+      <ul style="margin-top:0">
+        <li><b>Browse music</b>: walk folders and pick a song. The rest of that folder becomes the playlist.</li>
+        <li><b>Now playing</b>: shows title, artist, a progress bar, time and track number.</li>
+        <li><b>Resume last</b>: picks up the last song after a reboot.</li>
+        <li><b>Internet radio</b>: your station list. Needs home Wi-Fi.</li>
+        <li><b>Shuffle folder</b> / <b>Shuffle all music</b>: the folder you're in, or the whole card.</li>
+        <li><b>Bluetooth</b>: headset status, scan, connect, reconnect, forget.</li>
+        <li><b>Wi-Fi</b>: on/off, IP address, network or hotspot name and password.</li>
+        <li><b>Settings</b>: volume, mode (Normal / Repeat all / Repeat one / Shuffle), screen timeout, brightness, resume, re-scan SD card, bass, treble, sleep timer, visualizer.</li>
+      </ul>
+      <p class="muted">Settings are saved on the board and kept between power-ups.</p>
+    </div>
+  </div>
+</div>
+
+<script type="text/plain" id="esptool-src">__ESPTOOL__</script>
+<script type="text/plain" id="fw-b64">__FW_B64__</script>
+<script>
+// ---------- OLED preview (animated Now Playing mock) ----------
+(function(){
+  const c=document.getElementById('preview'),g=c.getContext('2d');let t=0;
+  const title="Midnight Drive  -  Synthwave Mix  ";
+  function frame(){
+    g.fillStyle='#000';g.fillRect(0,0,128,64);g.fillStyle='#7fe3ff';
+    g.font='8px monospace';g.fillText('Playing',0,8);g.fillText('SH ◄)12 ▭',74,8);g.fillRect(0,10,128,1);
+    g.font='bold 11px monospace';const w=g.measureText(title).width;const off=(t*0.6)%w;
+    g.save();g.beginPath();g.rect(0,12,128,15);g.clip();g.fillText(title,-off,24);g.fillText(title,w-off,24);g.restore();
+    g.font='8px monospace';g.fillText('The Night Cars',0,37);
+    g.strokeStyle='#7fe3ff';g.strokeRect(0.5,43.5,127,5);const p=((t/600)%1);g.fillRect(2,45,124*p,3);
+    const s=Math.floor(t/20)%240;g.fillText(Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),0,62);g.fillText('3/14',106,62);
+    g.beginPath();g.moveTo(60,53);g.lineTo(60,63);g.lineTo(68,58);g.fill();
+    t++;requestAnimationFrame(frame);
+  }frame();
+})();
+
+// ---------- Flasher ----------
+const $=id=>document.getElementById(id);
+const logEl=$('log'),statusEl=$('status'),progEl=$('prog'),goBtn=$('go');
+function log(s){logEl.textContent+=s+'\n';logEl.scrollTop=logEl.scrollHeight;}
+function status(s,color){statusEl.textContent=s;statusEl.style.color=color||'';}
+function fwBytes(){
+  const b=atob($('fw-b64').textContent.trim());const u=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;
+}
+if(!('serial' in navigator)){
+  goBtn.disabled=true;
+  $('support').innerHTML='<b style="color:var(--bad)">This browser can\'t talk to USB serial.</b> Open this file in <b>Chrome</b> or <b>Edge</b> on a desktop or laptop.';
+}
+$('dl').onclick=()=>{
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([fwBytes()],{type:'application/octet-stream'}));
+  a.download='heltec-v4-mp3-v__VERSION__.bin';a.click();
+  log('Saved .bin. Flash it at address 0x0 with esptool, e.g. esptool.py --chip esp32s3 write_flash 0x0 heltec-v4-mp3-v__VERSION__.bin');
+};
+let esptool=null;
+async function loadEsptool(){
+  if(esptool)return esptool;
+  const src=$('esptool-src').textContent;
+  esptool=await import(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+  return esptool;
+}
+goBtn.onclick=async()=>{
+  let transport=null;
+  goBtn.disabled=true;progEl.style.width='0%';logEl.textContent='';
+  try{
+    const {ESPLoader,Transport}=await loadEsptool();
+    status('Pick the serial port…');
+    const port=await navigator.serial.requestPort({});
+    transport=new Transport(port,false);
+    const terminal={clean(){},writeLine(s){log(s)},write(s){logEl.textContent+=s}};
+    const loader=new ESPLoader({transport,baudrate:921600,romBaudrate:115200,terminal});
+    status('Connecting…');
+    const chip=await loader.main();
+    log('Chip: '+chip);
+    if(!/ESP32-S3/i.test(chip)){throw new Error('This is a '+chip+', not an ESP32-S3. Is this a Heltec V4?');}
+    if($('erase').checked){status('Erasing flash (about 20 s)…','var(--warn)');await loader.eraseFlash();log('Flash erased.');}
+    const data=fwBytes();
+    status('Writing firmware…');
+    await loader.writeFlash({
+      fileArray:[{data,address:0x0}],flashMode:'keep',flashFreq:'keep',flashSize:'keep',
+      eraseAll:false,compress:true,
+      reportProgress:(i,w,t)=>{const p=Math.round(w/t*100);progEl.style.width=p+'%';status('Writing firmware… '+p+'%');}
+    });
+    progEl.style.width='100%';
+    status('Restarting board…');
+    await loader.after('hard_reset');
+    status('Done! Your Heltec MP3 is starting up.','var(--ok)');
+    log('All done. Unplug and enjoy.');
+  }catch(e){
+    console.error(e);
+    status('Failed: '+(e.message||e),'var(--bad)');
+    log('ERROR: '+(e.message||e));
+  }finally{
+    try{if(transport)await transport.disconnect();}catch(_){}
+    goBtn.disabled=!('serial' in navigator);
+  }
+};
+</script>
+</body>
+</html>
