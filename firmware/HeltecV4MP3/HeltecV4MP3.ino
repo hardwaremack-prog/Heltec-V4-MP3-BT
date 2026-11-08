@@ -37,7 +37,7 @@
 #include "AudioGeneratorWAV.h"
 #include "AudioOutputI2S.h"
 
-#define FW_VERSION "2.0.0"
+#define FW_VERSION "2.0.1"
 #define BOARD_NAME "Heltec V4"
 
 // ---------------- Pins (Heltec WiFi LoRa 32 V4, ESP32-S3R2) ----------------
@@ -53,11 +53,13 @@
 #define PIN_FEM_POWER   7   // LoRa front-end LDO: held LOW (LoRa PA off) to save power
 // NOT used (taken on the V4): 2, 5, 7, 46 = LoRa PA/FEM, 19/20 = USB, 26 = PSRAM, 8-14 = LoRa SX1262
 
-// microSD module (SPI). Shares pins with the GNSS connector: don't plug the GNSS kit in.
-#define PIN_SD_SCK     40
+// microSD module (SPI) - "inline" layout: the module's CS/MOSI/CLK/MISO pins plug straight
+// into four neighbouring J3 header pins (42, 41, 40, 39); only 3v3 and GND need jumpers.
+// Shares pins with the GNSS connector: don't plug the GNSS kit in.
+#define PIN_SD_CS      42
 #define PIN_SD_MOSI    41
-#define PIN_SD_MISO    42
-#define PIN_SD_CS      39
+#define PIN_SD_SCK     40   // "CLK" on the module
+#define PIN_SD_MISO    39
 
 // PCM5102A I2S DAC
 #define PIN_I2S_BCK    48
@@ -813,7 +815,7 @@ void drawAbout() {
 void drawNoSD() {
   oled.setFont(u8g2_font_7x13B_tf); oled.drawStr(18, 14, "No SD card");
   oled.setFont(u8g2_font_5x7_tf);
-  oled.drawStr(0, 26, "SCK40 MOSI41 MISO42 CS39");
+  oled.drawStr(0, 26, "CS42 MOSI41 CLK40 MISO39");
   oled.drawStr(0, 35, "3.3V + GND, FAT32 card");
   oled.drawStr(0, 44, "Radio works on Wi-Fi");
   oled.setFont(u8g2_font_6x10_tf); oled.drawStr(0, 60, "OK: retry  BACK: home");

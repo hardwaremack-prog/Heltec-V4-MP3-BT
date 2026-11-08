@@ -41,13 +41,13 @@
 <text x="409.4117647058823" y="490" fill="#6b7d90" font-size="12" font-weight="400" text-anchor="middle">46</text>
 <circle cx="451.7647058823529" cy="458" r="8" fill="#0b0f14" stroke="#6b7d90" stroke-width="3"/>
 <text x="451.7647058823529" y="490" fill="#6b7d90" font-size="12" font-weight="400" text-anchor="middle">45</text>
-<circle cx="494.11764705882354" cy="458" r="11" fill="#ffa53a" stroke="#ffa53a" stroke-width="3"/>
+<circle cx="494.11764705882354" cy="458" r="11" fill="#c77dff" stroke="#c77dff" stroke-width="3"/>
 <text x="494.11764705882354" y="490" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">42</text>
 <circle cx="536.4705882352941" cy="458" r="11" fill="#4cd964" stroke="#4cd964" stroke-width="3"/>
 <text x="536.4705882352941" y="490" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">41</text>
 <circle cx="578.8235294117646" cy="458" r="11" fill="#3aa0ff" stroke="#3aa0ff" stroke-width="3"/>
 <text x="578.8235294117646" y="490" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">40</text>
-<circle cx="621.1764705882354" cy="458" r="11" fill="#c77dff" stroke="#c77dff" stroke-width="3"/>
+<circle cx="621.1764705882354" cy="458" r="11" fill="#ffa53a" stroke="#ffa53a" stroke-width="3"/>
 <text x="621.1764705882354" y="490" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">39</text>
 <circle cx="663.5294117647059" cy="458" r="8" fill="#0b0f14" stroke="#6b7d90" stroke-width="3"/>
 <text x="663.5294117647059" y="490" fill="#6b7d90" font-size="12" font-weight="400" text-anchor="middle">38</text>
@@ -102,24 +102,24 @@
 <circle cx="960.0" cy="732" r="8" fill="#0b0f14" stroke="#4b5b6d" stroke-width="3"/>
 <text x="960.0" y="714" fill="#4f6072" font-size="12" text-anchor="middle">19</text>
 <path d="M430,294 C430,384 282.3529411764706,336 282.3529411764706,446" fill="none" stroke="#ff5a5a" stroke-width="6" stroke-linecap="round"/>
-<path d="M498,294 C498,384 621.1764705882354,336 621.1764705882354,446" fill="none" stroke="#c77dff" stroke-width="6" stroke-linecap="round"/>
+<path d="M498,294 C498,384 494.11764705882354,336 494.11764705882354,446" fill="none" stroke="#c77dff" stroke-width="6" stroke-linecap="round"/>
 <path d="M566,294 C566,384 536.4705882352941,336 536.4705882352941,446" fill="none" stroke="#4cd964" stroke-width="6" stroke-linecap="round"/>
 <path d="M634,294 C634,384 578.8235294117646,336 578.8235294117646,446" fill="none" stroke="#3aa0ff" stroke-width="6" stroke-linecap="round"/>
-<path d="M702,294 C702,384 494.11764705882354,336 494.11764705882354,446" fill="none" stroke="#ffa53a" stroke-width="6" stroke-linecap="round"/>
+<path d="M702,294 C702,384 621.1764705882354,336 621.1764705882354,446" fill="none" stroke="#ffa53a" stroke-width="6" stroke-linecap="round"/>
 <path d="M770,294 C770,384 240.0,336 240.0,446" fill="none" stroke="#9aa4ae" stroke-width="6" stroke-linecap="round"/>
 <rect x="40" y="776" width="22" height="8" rx="4" fill="#ff5a5a"/>
 <text x="70" y="784" fill="#d7e3ee" font-size="16" font-weight="600">3v3 → 3V3</text>
 <rect x="175.2" y="776" width="22" height="8" rx="4" fill="#c77dff"/>
-<text x="205.2" y="784" fill="#d7e3ee" font-size="16" font-weight="600">CS → GPIO 39</text>
+<text x="205.2" y="784" fill="#d7e3ee" font-size="16" font-weight="600">CS → GPIO 42</text>
 <rect x="336.8" y="776" width="22" height="8" rx="4" fill="#4cd964"/>
 <text x="366.8" y="784" fill="#d7e3ee" font-size="16" font-weight="600">MOSI → GPIO 41</text>
 <rect x="516.0" y="776" width="22" height="8" rx="4" fill="#3aa0ff"/>
 <text x="546.0" y="784" fill="#d7e3ee" font-size="16" font-weight="600">CLK → GPIO 40</text>
 <rect x="686.4" y="776" width="22" height="8" rx="4" fill="#ffa53a"/>
-<text x="716.4" y="784" fill="#d7e3ee" font-size="16" font-weight="600">MISO → GPIO 42</text>
+<text x="716.4" y="784" fill="#d7e3ee" font-size="16" font-weight="600">MISO → GPIO 39</text>
 <rect x="865.6" y="776" width="22" height="8" rx="4" fill="#9aa4ae"/>
 <text x="895.6" y="784" fill="#d7e3ee" font-size="16" font-weight="600">GND → GND</text>
 <text x="40" y="818" fill="#7f93a8" font-size="14">Module pins in silkscreen order: 3v3 · CS · MOSI · CLK · MISO · GND (square pad = 3v3). CLK is the SPI clock (SCK).</text>
 <text x="40" y="838" fill="#7f93a8" font-size="14">Header pin names are printed on the Heltec board. Match by name, not position.</text>
-<text x="40" y="858" fill="#7f93a8" font-size="14">On the V4, GPIO 39–42 are shared with the GNSS connector, so leave the GNSS kit unplugged.</text>
+<text x="40" y="858" fill="#7f93a8" font-size="14">V4 firmware v2.0.1+ (CS 42, MISO 39). The module can also plug straight in: see the inline mounting diagram. Leave the GNSS kit unplugged.</text>
 </svg>

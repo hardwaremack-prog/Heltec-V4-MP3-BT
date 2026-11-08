@@ -84,7 +84,7 @@ static void progressScreen(const char *title, const char *line) {
 }
 int main(void) {
   u8g2_Setup_ssd1306_128x64_noname_f(g, U8G2_R0, nocom, nocom);
-  u8g2_ClearBuffer(g); progressScreen("Heltec V4 MP3", "v2.0.0  starting..."); save("01_boot");
+  u8g2_ClearBuffer(g); progressScreen("Heltec V4 MP3", "v2.0.1  starting..."); save("01_boot");
   const char *home[] = { "Browse music", "Now playing", "Internet radio", "Resume last", "Shuffle folder", "Shuffle all music", "Bluetooth", "Wi-Fi", "Settings", "About" };
   u8g2_ClearBuffer(g); header("Heltec MP3", 12, "SH", 1); list(home, NULL, 10, 2, 0); save("02_home");
   u8g2_ClearBuffer(g); np("Playing", "SH", "Midnight Drive", "The Night Cars", 0.42f, 0, "1:23", "3/14", 1); save("03_now_playing_flac");
@@ -106,14 +106,14 @@ int main(void) {
   u8g2_ClearBuffer(g); header("Wi-Fi", 12, "SH", 1); list(wf, NULL, 6, 1, 0); save("12_wifi");
   u8g2_ClearBuffer(g); header("About", 12, "SH", 1);
   u8g2_SetFont(g, u8g2_font_6x10_tf);
-  u8g2_DrawStr(g, 0, 23, "Heltec V4 MP3 v2.0.0"); u8g2_DrawStr(g, 0, 34, "IP 192.168.1.58");
+  u8g2_DrawStr(g, 0, 23, "Heltec V4 MP3 v2.0.1"); u8g2_DrawStr(g, 0, 34, "IP 192.168.1.58");
   u8g2_DrawStr(g, 0, 45, "Battery 3.95V 72%"); u8g2_DrawStr(g, 0, 56, "hold=OK  long=back");
   save("13_about");
   BATT = -1;
   u8g2_ClearBuffer(g);
   u8g2_SetFont(g, u8g2_font_7x13B_tf); u8g2_DrawStr(g, 18, 14, "No SD card");
   u8g2_SetFont(g, u8g2_font_5x7_tf);
-  u8g2_DrawStr(g, 0, 26, "SCK40 MOSI41 MISO42 CS39"); u8g2_DrawStr(g, 0, 35, "3.3V + GND, FAT32 card"); u8g2_DrawStr(g, 0, 44, "Radio works on Wi-Fi");
+  u8g2_DrawStr(g, 0, 26, "CS42 MOSI41 CLK40 MISO39"); u8g2_DrawStr(g, 0, 35, "3.3V + GND, FAT32 card"); u8g2_DrawStr(g, 0, 44, "Radio works on Wi-Fi");
   u8g2_SetFont(g, u8g2_font_6x10_tf); u8g2_DrawStr(g, 0, 60, "OK: retry  BACK: home");
   save("14_no_sd");
   u8g2_ClearBuffer(g); np("Paused", "", "Nothing Else Matters", "Live at the Roxy", 0.71f, 0, "4:02", "WAV", 0); save("15_paused");

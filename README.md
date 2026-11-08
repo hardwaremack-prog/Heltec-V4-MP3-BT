@@ -52,10 +52,10 @@ Everything from the V3 version is still here: OLED menus, PRG-only or 4-button c
 You can also flash with esptool:
 
 ```
-esptool.py --chip esp32s3 write_flash 0x0 releases/heltec-v4-mp3-v2.0.0.bin
+esptool.py --chip esp32s3 write_flash 0x0 releases/heltec-v4-mp3-v2.0.1.bin
 ```
 
-For wireless updates (System tab), use `releases/heltec-v4-mp3-app-v2.0.0.bin`.
+For wireless updates (System tab), use `releases/heltec-v4-mp3-app-v2.0.1.bin`.
 
 > Built for the standard **V4 (ESP32-S3R2)**. The V4-R8 variant moves Vext, LED and ADC_Ctrl to other pins.
 
@@ -73,13 +73,17 @@ Leave those alone. The SD card shares GPIO 39–42 with the GNSS connector, so *
 
 ![microSD wiring for the Heltec V4](screenshots/wiring/sd-wiring-V4.png)
 
+**Easier: plug it straight in.** From firmware **v2.0.1** the SD pins are CS 42 · MOSI 41 · CLK 40 · MISO 39. Those are four neighbouring J3 pins in the same order as the module's CS · MOSI · CLK · MISO, so the module can plug straight into the header. Bend up (or clip) its 3v3 and GND pins so they skip GPIO 45 and 38, then add two short jumpers to the GND and 3V3 pins at the start of the row.
+
+![Inline microSD mounting on the Heltec V4](screenshots/wiring/sd-inline-V4.png)
+
 | microSD (3.3 V SPI) | V4 |
 |---|---|
 | VCC / GND | 3V3 / GND |
 | CLK (SCK) | GPIO 40 |
 | MOSI | GPIO 41 |
-| MISO | GPIO 42 |
-| CS | GPIO 39 |
+| MISO | GPIO 39 |
+| CS | GPIO 42 |
 
 | PCM5102A DAC | V4 |
 |---|---|
@@ -150,7 +154,7 @@ arduino-cli compile -b "esp32:esp32:heltec_wifi_lora_32_V4:PSRAM=enabled,FlashSi
 Rebuild the flasher with:
 
 ```
-python3 flasher/build_flasher.py <merged.bin> 2.0.0 <esptool-js bundle.js>
+python3 flasher/build_flasher.py <merged.bin> 2.0.1 <esptool-js bundle.js>
 ```
 
 `tools/oled_sim_v4.c` renders the OLED screens on a PC (see the V3 repo for the command).
@@ -158,6 +162,11 @@ python3 flasher/build_flasher.py <merged.bin> 2.0.0 <esptool-js bundle.js>
 ## Web flasher (GitHub Pages)
 
 `docs/` is the online flasher served at the link above. It holds both firmwares (`docs/firmware/`), so the same page flashes a V3 or a V4. When you build a new firmware, copy the trimmed merged `.bin` into `docs/firmware/` and update the version in `docs/index.html`.
+
+## Changelog
+
+- **v2.0.1:** microSD pins changed to the **inline** layout (CS 42, MOSI 41, CLK 40, MISO 39) so the module plugs straight into the J3 header. If your board is wired the v2.0.0 way (CS 39, MISO 42), swap those two wires.
+- **v2.0.0:** first V4 release.
 
 ## Credits
 

@@ -10,6 +10,8 @@ def svg(board):
     # SD module
     sx,sy,sw,sh=360,60,480,170
     sd=[('3v3','3V3','#ff5a5a',1),('CS','39','#c77dff',9),('MOSI','41','#4cd964',7),('CLK','40','#3aa0ff',8),('MISO','42','#ffa53a',6),('GND','GND','#9aa4ae',0)]
+    if board=='V4':   # v2.0.1+ inline layout: CS 42, MISO 39 (module plugs straight into 42-41-40-39)
+        sd=[('3v3','3V3','#ff5a5a',1),('CS','42','#c77dff',6),('MOSI','41','#4cd964',7),('CLK','40','#3aa0ff',8),('MISO','39','#ffa53a',9),('GND','GND','#9aa4ae',0)]
     sdx=lambda k: sx+70+k*68
     o=[]
     o.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif">')
@@ -63,7 +65,7 @@ def svg(board):
     note='Pin names are printed next to each header pin on the board. Match by name. SD modules order their pins differently, so go by the labels.'
     if board=='V4': note+=' On the V4, GPIO 39–42 are shared with the GNSS connector, so leave the GNSS kit unplugged.'
     lines=['Module pins in silkscreen order: 3v3 · CS · MOSI · CLK · MISO · GND (square pad = 3v3). CLK is the SPI clock (SCK).','Header pin names are printed on the Heltec board. Match by name, not position.']
-    if board=='V4': lines.append('On the V4, GPIO 39–42 are shared with the GNSS connector, so leave the GNSS kit unplugged.')
+    if board=='V4': lines.append('V4 firmware v2.0.1+ (CS 42, MISO 39). The module can also plug straight in: see the inline mounting diagram. Leave the GNSS kit unplugged.')
     for n,l in enumerate(lines): o.append(f'<text x="40" y="{ly+28+n*20}" fill="#7f93a8" font-size="14">{l}</text>')
     o.append('</svg>')
     return '\n'.join(o)

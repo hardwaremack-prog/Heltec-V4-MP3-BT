@@ -24,6 +24,6 @@ for p in sorted(glob.glob('out/*.pbm')):
     ImageDraw.Draw(t).text((8,10),names[k],font=F,fill=(127,227,255)); tiles.append(t)
 cols=3; w,h=tiles[0].size; g=24
 sheet=Image.new('RGB',(cols*w+(cols+1)*g,5*h+6*g+70),(11,15,20)); d=ImageDraw.Draw(sheet)
-d.text((g,22),'Heltec V4 MP3 v2.0.0 — OLED screens (rendered with the real U8g2 fonts)',font=ImageFont.truetype(B,28),fill=(255,255,255))
+d.text((g,22),'Heltec V4 MP3 v2.0.1 — OLED screens (rendered with the real U8g2 fonts)',font=ImageFont.truetype(B,28),fill=(255,255,255))
 for i,t in enumerate(tiles): sheet.paste(t,(g+(i%cols)*(w+g),70+g+(i//cols)*(h+g)))
 sheet.save('png/OLED-screens-V4.png')
