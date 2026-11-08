@@ -52,10 +52,10 @@ Everything from the V3 version is still here: OLED menus, PRG-only or 4-button c
 You can also flash with esptool:
 
 ```
-esptool.py --chip esp32s3 write_flash 0x0 releases/heltec-v4-mp3-v2.0.3.bin
+esptool.py --chip esp32s3 write_flash 0x0 releases/heltec-v4-mp3-v2.0.4.bin
 ```
 
-For wireless updates (System tab), use `releases/heltec-v4-mp3-app-v2.0.3.bin`.
+For wireless updates (System tab), use `releases/heltec-v4-mp3-app-v2.0.4.bin`.
 
 > Built for the standard **V4 (ESP32-S3R2)**. The V4-R8 variant moves Vext, LED and ADC_Ctrl to other pins.
 
@@ -136,6 +136,12 @@ While you hold PRG, a bar fills along the bottom of the screen. After 0.6 s a **
 - **http:// only.** Plain MP3 or AAC streams work; https-only streams won't play.
 - **Now Playing** shows the station, the live song title, a **LIVE** tag and how full the buffer is. If the stream drops, the player reconnects automatically (up to 3 tries).
 
+## Listen on your phone or PC
+
+On the web page, open **Player** and switch **Play music on** to **This phone / PC**. Then tap any song in **Library** (or a search result) and it plays in your browser, streamed from the player's SD card over Wi-Fi. You get seek, next/previous, shuffle and auto-advance through the folder, and on iPhone the lock-screen controls work. Tap a **Radio** station and it streams straight from the internet to your phone (your phone needs internet, so use home Wi-Fi). Switch back to **Heltec player** to play through the board's headphones or Bluetooth headset again. The choice is remembered per device.
+
+<img src="screenshots/web/8_play_on_phone.png" width="300" alt="Playing on the phone">
+
 ## Wi-Fi
 
 **At start-up the player shows a Connect screen.** Scan the QR code with your phone camera and it joins the hotspot by itself (or opens the page, if the player is already on your home Wi-Fi). The screen also shows the network name, password and IP. It moves on as soon as your phone opens the page, or press PRG to skip.
@@ -162,7 +168,7 @@ arduino-cli compile -b "esp32:esp32:heltec_wifi_lora_32_V4:PSRAM=enabled,FlashSi
 Rebuild the flasher with:
 
 ```
-python3 flasher/build_flasher.py <merged.bin> 2.0.3 <esptool-js bundle.js>
+python3 flasher/build_flasher.py <merged.bin> 2.0.4 <esptool-js bundle.js>
 ```
 
 `tools/oled_sim_v4.c` renders the OLED screens on a PC (see the V3 repo for the command).
@@ -173,6 +179,7 @@ python3 flasher/build_flasher.py <merged.bin> 2.0.3 <esptool-js bundle.js>
 
 ## Changelog
 
+- **v2.0.4:** **Listen on your phone or PC.** The Player tab has a new "Play music on: Heltec player / This phone / PC" switch. Pick *This phone / PC* and songs from Library or search stream from the SD card to your browser, with seek, next/previous, shuffle and iPhone lock-screen controls. Radio stations play straight from the internet. **Flashers:** they now send a real reset after flashing, so the board starts by itself instead of waiting for RST.
 - **v2.0.3:** New **Wi-Fi Connect screen** at start-up. It shows a QR code (scan with your phone camera to join the hotspot, or to open the page when the player is on your home Wi-Fi), plus the network name, password and IP. It moves on to the Home menu as soon as a phone or PC opens the page, or press PRG to skip. Turn it off in Settings → "Start: Home", and bring it back any time from Home → Wi-Fi (select the IP line). **More reliable cold start:** the screen gets proper power-up time and a second init, so it no longer needs RST after plugging in. The SD card gets 3 tries at start and then keeps retrying every 10 s, and the Bluetooth module check is faster.
 - **v2.0.2:** PRG press-and-hold fixed. Both long presses now act when you **let go**, and the screen shows a "Let go: OK" or "Let go: Back" hint so you know when. Before, "Back" fired by itself at 1.5 s while you were still holding, so holding to select often went back instead.
 - **v2.0.1:** microSD pins changed to the **inline** layout (CS 42, MOSI 41, CLK 40, MISO 39) so the module plugs straight into the J3 header. If your board is wired the v2.0.0 way (CS 39, MISO 42), swap those two wires.

@@ -150,7 +150,65 @@ void sendErr(const String &m) { sendJson("{\"ok\":false,\"error\":" + jstr(m) + 
 
 bool safePath(const String &p) { return p.startsWith("/") && p.indexOf("..") < 0; }
 
+const char *mimeFor(const String &p) {
+  String l = p; l.toLowerCase();
+  if (l.endsWith(".mp3")) return "audio/mpeg";
+  if (l.endsWith(".aac")) return "audio/aac";
+  if (l.endsWith(".flac")) return "audio/flac";
+  if (l.endsWith(".wav")) return "audio/wav";
+  return "application/octet-stream";
+}
+
+// Stream a song from the SD card to a browser (iPhone Safari needs HTTP Range / 206 support).
+// Each reply is capped at STREAM_SLICE bytes; the browser simply asks for the next part,
+// so the web server never gets tied up sending a whole file.
+#define STREAM_SLICE (256 * 1024)
+void handleStream() {
+  String path = server.arg("path");
+  if (!sdOk || !safePath(path)) { server.send(404, "text/plain", "Not found"); return; }
+  lockA(); File f = SD.open(path); unlockA();
+  if (!f || f.isDirectory()) { if (f) { lockA(); f.close(); unlockA(); } server.send(404, "text/plain", "Not found"); return; }
+  uint32_t size = f.size(), start = 0, end = size ? size - 1 : 0;
+  bool ranged = false;
+  String r = server.header("Range");                    // "bytes=START-" or "bytes=START-END"
+  if (r.startsWith("bytes=")) {
+    int dash = r.indexOf('-');
+    String a = r.substring(6, dash), b = r.substring(dash + 1);
+    if (a.length()) { start = a.toInt(); if (b.length()) end = b.toInt(); }
+    else if (b.length()) { uint32_t n = b.toInt(); start = n < size ? size - n : 0; }   // suffix range
+    ranged = true;
+  }
+  if (start >= size) {
+    lockA(); f.close(); unlockA();
+    server.sendHeader("Content-Range", "bytes */" + String(size));
+    server.send(416, "text/plain", ""); return;
+  }
+  if (end >= size) end = size - 1;
+  if (end - start + 1 > STREAM_SLICE) { end = start + STREAM_SLICE - 1; ranged = true; }
+  uint32_t len = end - start + 1;
+  server.sendHeader("Accept-Ranges", "bytes");
+  server.sendHeader("Cache-Control", "no-cache");
+  if (ranged) server.sendHeader("Content-Range", "bytes " + String(start) + "-" + String(end) + "/" + String(size));
+  server.setContentLength(len);
+  server.send(ranged ? 206 : 200, mimeFor(path), "");
+  WiFiClient c = server.client();
+  static uint8_t buf[4096];
+  lockA(); f.seek(start); unlockA();
+  while (len && c.connected()) {
+    size_t want = len < sizeof(buf) ? len : sizeof(buf);
+    lockA(); size_t n = f.read(buf, want); unlockA();      // short SD reads, so on-board playback never stutters
+    if (!n) break;
+    size_t w = c.write(buf, n);
+    if (w != n) break;
+    len -= n;
+  }
+  lockA(); f.close(); unlockA();
+}
+
 void setupRoutes() {
+  const char *hdrs[] = { "Range" };
+  server.collectHeaders(hdrs, 1);
+  server.on("/stream", HTTP_GET, handleStream);
   server.on("/", HTTP_GET, []() {
     webHit = true;
     server.sendHeader("Cache-Control", "no-cache");

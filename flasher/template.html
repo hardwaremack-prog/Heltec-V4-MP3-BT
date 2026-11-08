@@ -300,7 +300,15 @@ goBtn.onclick=async()=>{
     });
     progEl.style.width='100%';
     status('Restarting board…');
-    await loader.after('hard_reset');
+    // Real reset pulse: DTR off (GPIO0 high = run, not download), then RTS on/off pulses EN/RST.
+    // (esptool-js's own hard_reset only releases RTS, so the board stayed in flashing mode until RST was pressed.)
+    try {
+      await transport.setDTR(false);
+      await transport.setRTS(true);
+      await new Promise(r => setTimeout(r, 150));
+      await transport.setRTS(false);
+      await new Promise(r => setTimeout(r, 100));
+    } catch (e) { log('Reset pulse: ' + (e.message || e)); }
     status('Done! Your Heltec MP3 is starting up.','var(--ok)');
     log('All done. Unplug and enjoy.');
   }catch(e){

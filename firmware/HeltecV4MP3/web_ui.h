@@ -60,6 +60,26 @@ input[type=range]{width:100%;accent-color:var(--o)}
 <main>
 
 <section class="pg on" id="pg-play">
+ <div class="card" style="padding:12px 16px">
+  <div class="row" style="justify-content:space-between"><b>Play music on</b><span class="muted" id="modeHint"></span></div>
+  <div class="seg" id="playOn" style="margin-top:8px"><button data-m="dev">🔊 Heltec player</button><button data-m="local">📱 This phone / PC</button></div>
+ </div>
+ <div class="card" id="localCard" style="display:none">
+  <div class="np-t" id="lTitle">Pick a song</div>
+  <div class="np-a" id="lSub">Tap a song in Library or a station in Radio. It plays right here.</div>
+  <input type="range" id="lSeek" min="0" max="1000" value="0" style="margin-top:14px">
+  <div class="row muted" style="justify-content:space-between"><span id="lTime">0:00</span><span id="lDur"></span></div>
+  <div class="ctl">
+   <button onclick="lStep(-1)" title="Previous"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+   <button class="big" onclick="lToggle()" title="Play/Pause"><svg viewBox="0 0 24 24" id="lIcon"><path d="M8 5v14l11-7z"/></svg></button>
+   <button onclick="lStep(1)" title="Next"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+  </div>
+  <div class="row" style="gap:10px"><span class="muted">Volume</span><input type="range" id="lVol" min="0" max="100" value="100" style="flex:1"></div>
+  <div class="row" style="margin-top:10px"><button class="b g" id="lShufBtn" onclick="lShuffle()">Shuffle: off</button><button class="b g" onclick="lStop()">Stop</button></div>
+  <p class="muted" style="margin-bottom:0">Music streams from the player's SD card over Wi-Fi. Radio stations stream straight from the internet, so your phone needs internet (home Wi-Fi). On iPhone, use the side buttons for volume.</p>
+  <audio id="au" preload="auto" playsinline></audio>
+ </div>
+ <div id="devCards">
  <div class="card">
   <div class="np-t" id="title">Nothing playing</div>
   <div class="np-a" id="artist">Pick a song in Library or a station in Radio</div>
@@ -89,6 +109,7 @@ input[type=range]{width:100%;accent-color:var(--o)}
   <h2 style="margin-top:16px">Sleep timer <span class="muted" id="sleepTxt"></span></h2>
   <div class="seg" id="sleeps"><button data-s="0">Off</button><button data-s="15">15</button><button data-s="30">30</button><button data-s="45">45</button><button data-s="60">60</button><button data-s="90">90</button></div>
  </div>
+</div>
 </section>
 
 <section class="pg" id="pg-lib">
@@ -253,6 +274,8 @@ async function ls(d){
     if(ev.target.classList.contains('x')){ev.stopPropagation();if(!confirm('Delete '+n+'?'))return;
      try{await post('/api/delete',{path:join(cur,n)});ls(cur)}catch(e){toast(e.message)}return}
     if(el.dataset.d==='1')ls(join(cur,n));
+    else if(playOn==='local'){const files=e.filter(x=>!x.d).map(x=>({path:join(cur,x.n),title:songTitle(x.n),sub:cur==='/'?'SD card':cur.split('/').pop()}));
+     lPlay(files,Math.max(0,files.findIndex(f=>f.path===join(cur,n))),'file');toast('Playing on this device')}
     else{try{showStatus(await post('/api/play',{dir:cur,file:n}));toast('Playing '+n.replace(/\.(mp3|aac|flac|wav)$/i,''));ls(cur)}catch(e){toast(e.message)}}
    }});
  }catch(e){$('files').innerHTML='<div class="it bad">'+esc(e.message)+'</div>'}
@@ -267,11 +290,44 @@ $('up').onchange=async()=>{
    x.open('POST','/api/upload?'+q({dir:cur}));x.send(fd)})}
  $('upStat').textContent=files.length?'Uploaded '+files.length+' file(s).':'';$('up').value='';ls(cur)};
 
+// ---- play on this phone / PC ----
+const au=$('au');let lq=[],li=-1,lkind='',lshuf=false,lseekDrag=false;
+let playOn='dev';try{playOn=localStorage.getItem('playOn')||'dev'}catch(e){}
+function setPlayOn(m){playOn=m;try{localStorage.setItem('playOn',m)}catch(e){}
+ document.querySelectorAll('#playOn button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+ $('localCard').style.display=m==='local'?'block':'none';$('devCards').style.display=m==='local'?'none':'block';
+ $('modeHint').textContent=m==='local'?'Library and Radio play here':'Library and Radio play on the Heltec'}
+document.querySelectorAll('#playOn button').forEach(b=>b.onclick=()=>setPlayOn(b.dataset.m));setPlayOn(playOn);
+function lPlay(list,i,kind){lq=list;li=i;lkind=kind;const it=lq[li];if(!it)return;
+ au.src=kind==='file'?'/stream?path='+encodeURIComponent(it.path):it.url;
+ au.play().catch(()=>toast('Tap ▶ to start'));lUI();
+ if('mediaSession' in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:it.title,artist:it.sub||'Heltec MP3',album:kind==='radio'?'Internet radio':'Heltec V4 MP3'})}catch(e){}}}
+function lUI(){const it=lq[li];$('lTitle').textContent=it?it.title:'Pick a song';
+ $('lSub').textContent=it?(it.sub||'')+(lq.length>1?'  ·  '+(li+1)+' of '+lq.length:''):'Tap a song in Library or a station in Radio. It plays right here.';
+ $('lIcon').innerHTML=!au.paused?'<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>'}
+function lToggle(){if(!au.src)return toast('Pick a song in Library first');if(au.paused)au.play();else au.pause()}
+function lNextIndex(d){if(!lq.length)return -1;if(lshuf&&lkind==='file'&&lq.length>1){let n;do{n=Math.floor(Math.random()*lq.length)}while(n===li);return n}return (li+d+lq.length)%lq.length}
+function lStep(d){if(d<0&&au.currentTime>3&&lkind==='file'){au.currentTime=0;return}const n=lNextIndex(d);if(n>=0)lPlay(lq,n,lkind)}
+function lStop(){au.pause();au.removeAttribute('src');au.load();lq=[];li=-1;lUI();$('lSeek').value=0;$('lTime').textContent='0:00';$('lDur').textContent=''}
+function lShuffle(){lshuf=!lshuf;$('lShufBtn').textContent='Shuffle: '+(lshuf?'on':'off')}
+au.onplay=au.onpause=lUI;
+au.onended=()=>{if(lkind==='file'){if(lshuf||li<lq.length-1)lStep(1)}};
+au.onerror=()=>{if(au.getAttribute('src'))toast(lkind==='radio'?'Station not reachable from this device':'This device can\'t play that file')};
+au.ontimeupdate=()=>{$('lTime').textContent=fmt(Math.floor(au.currentTime||0));
+ if(isFinite(au.duration)&&au.duration>0){$('lDur').textContent=fmt(Math.floor(au.duration));if(!lseekDrag)$('lSeek').value=Math.round(au.currentTime/au.duration*1000)}else{$('lDur').textContent=lkind==='radio'?'LIVE':''}};
+$('lSeek').oninput=()=>{lseekDrag=true};$('lSeek').onchange=()=>{lseekDrag=false;if(isFinite(au.duration))au.currentTime=$('lSeek').value/1000*au.duration};
+$('lVol').oninput=()=>{au.volume=$('lVol').value/100};
+if('mediaSession' in navigator){try{navigator.mediaSession.setActionHandler('play',()=>au.play());navigator.mediaSession.setActionHandler('pause',()=>au.pause());
+ navigator.mediaSession.setActionHandler('previoustrack',()=>lStep(-1));navigator.mediaSession.setActionHandler('nexttrack',()=>lStep(1))}catch(e){}}
+const songTitle=p=>p.split('/').pop().replace(/\.(mp3|aac|flac|wav)$/i,'');
+
 // ---- search ----
 async function search(){const q=$('q').value.trim();const r=$('results');r.style.display='block';r.innerHTML='<div class="it muted"><span class="spin"></span>&nbsp;Searching (first search scans the card)…</div>';
  try{const j=await get('/api/search',{q});
   r.innerHTML=(j.results.length?j.results.map(p=>'<div class="it" data-p="'+esc(p)+'">'+icM+'<span class="n">'+esc(p.split('/').pop().replace(/\.(mp3|aac|flac|wav)$/i,''))+'<br><span class="s">'+esc(p.substring(0,p.lastIndexOf('/'))||'/')+'</span></span></div>').join(''):'<div class="it muted">No matches</div>')+'<div class="it muted s">'+j.results.length+' shown · '+j.total+' songs on card</div>';
-  r.querySelectorAll('[data-p]').forEach(el=>el.onclick=async()=>{try{showStatus(await post('/api/play',{path:el.dataset.p}));toast('Playing')}catch(e){toast(e.message)}})}catch(e){r.innerHTML='<div class="it bad">'+esc(e.message)+'</div>'}}
+  r.querySelectorAll('[data-p]').forEach((el,k)=>el.onclick=async()=>{
+   if(playOn==='local'){const list=j.results.map(p=>({path:p,title:songTitle(p),sub:p.substring(0,p.lastIndexOf('/'))||'/'}));lPlay(list,k,'file');toast('Playing on this device');return}
+   try{showStatus(await post('/api/play',{path:el.dataset.p}));toast('Playing')}catch(e){toast(e.message)}})}catch(e){r.innerHTML='<div class="it bad">'+esc(e.message)+'</div>'}}
 $('q').onkeydown=e=>{if(e.key==='Enter')search()};
 
 // ---- radio ----
@@ -281,6 +337,7 @@ async function rLoad(){try{const j=await get('/api/radio');$('radioNote').style.
  $('stations').querySelectorAll('[data-i]').forEach(el=>el.onclick=async ev=>{const i=el.dataset.i;
   if(ev.target.classList.contains('del')){ev.stopPropagation();if(confirm('Delete this station?'))radio('del',{i});return}
   if(ev.target.classList.contains('up')){ev.stopPropagation();radio('up',{i});return}
+  if(playOn==='local'){lPlay(j.stations.map(s=>({url:s.url,title:s.name,sub:'Internet radio'})),+i,'radio');toast('Tuning in on this device…');return}
   toast('Tuning in…');await radio('play',{i});poll()})}catch(e){}}
 async function radio(a,o){try{await post('/api/radio',Object.assign({a},o||{}));rLoad()}catch(e){toast(e.message)}}
 function addSt(){const n=$('stName').value.trim(),u=$('stUrl').value.trim();if(!n||!u)return toast('Enter a name and URL');radio('add',{name:n,url:u});$('stName').value='';$('stUrl').value=''}

@@ -38,7 +38,7 @@
 #include "AudioOutputI2S.h"
 #include "qrcode.h"          // esp_qrcode (built into the ESP32 core)
 
-#define FW_VERSION "2.0.3"
+#define FW_VERSION "2.0.4"
 #define BOARD_NAME "Heltec V4"
 
 // ---------------- Pins (Heltec WiFi LoRa 32 V4, ESP32-S3R2) ----------------
